@@ -1,0 +1,37 @@
+// JavaScript / test/game.test.js / Node.js 24+ / AimRush rule and HTTP tests
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import {RULES,createGame,advance,shoot,result} from '../game.js';
+test('seed generates repeatable, in-bounds targets',()=>{const a=createGame(123),b=createGame(123);assert.deepEqual(a.targets,b.targets);assert.equal(a.targets.length,30);assert.ok(a.targets.every(t=>t.x-t.r>0&&t.x+t.r<1000&&t.y-t.r>0&&t.y+t.r<600));});
+test('hit scoring and streak bonus increase every five hits',()=>{const g=createGame(1);for(let i=0;i<10;i++){const t=g.targets[i],event=shoot(g,t.at+100,i,t.x,t.y);assert.equal(event.credits,i<4?6:i<9?8:10);}assert.equal(g.reward,74);assert.equal(g.bestStreak,10);assert.equal(result(g).reaction,100);});
+test('expired targets penalize once and reset streak',()=>{const g=createGame(1),t=g.targets[0];shoot(g,100,0,t.x,t.y);advance(g,1950);assert.equal(g.misses,1);assert.equal(g.penalty,4);assert.equal(g.streak,0);advance(g,1950);assert.equal(g.penalty,4);assert.equal(g.hits,1);});
+test('shots reject future, expired, replayed and invalid inputs',()=>{const g=createGame(1),t=g.targets[0];assert.throws(()=>shoot(g,0,1,0,0));assert.throws(()=>shoot(g,950,0,t.x,t.y));assert.throws(()=>shoot(g,0,0,NaN,0));assert.throws(()=>shoot(g,0,0,-1,0));shoot(g,100,0,t.x,t.y);assert.throws(()=>shoot(g,101,0,t.x,t.y));});
+test('wrong shots cost two, reset combo, and cannot be charged twice per target',()=>{const g=createGame(1);shoot(g,10,0,g.targets[0].x,g.targets[0].y);shoot(g,1010,1,0,0);assert.equal(g.streak,0);assert.equal(g.penalty,2);assert.throws(()=>shoot(g,1020,1,0,0));shoot(g,1030,1,g.targets[1].x,g.targets[1].y);assert.equal(result(g).accuracy,67);});
+test('no hits returns zero; perfect play has a reproducible payout',()=>{const g=createGame(1);advance(g,RULES.duration);assert.equal(g.misses,30);assert.equal(result(g).payout,0);assert.equal(result(g).net,-100);const perfect=createGame(1);for(const t of perfect.targets)shoot(perfect,t.at+100,t.id,t.x,t.y);assert.equal(perfect.reward,340);assert.equal(result(perfect).payout,440);assert.equal(result(perfect).net,340);});
+test('HTTP lifecycle: authoritative rewards, expiry, wallet, idempotency, local ranking',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'aimrush-'));const child=spawn(process.execPath,['server.js'],{cwd:new URL('..',import.meta.url),env:{...process.env,PORT:'3097',DATA_DIR:dir},stdio:['ignore','pipe','pipe']});
+ t.after(async()=>{child.kill();await new Promise(resolve=>child.once('exit',resolve));rmSync(dir,{recursive:true,force:true});});
+ await new Promise((resolve,reject)=>{child.stdout.once('data',resolve);child.once('error',reject);child.once('exit',code=>reject(Error('Server exited '+code)));});
+ let cookie='';const request=async(path,body)=>{const res=await fetch('http://127.0.0.1:3097/api/'+path,{method:body?'POST':'GET',headers:{cookie,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(res.headers.has('set-cookie'))cookie=res.headers.get('set-cookie').split(';')[0];return {status:res.status,data:await res.json()};};
+ let r=await request('state');assert.equal(r.data.balance,1000);
+ r=await request('start',{});assert.equal(r.data.balance,900);const game=r.data.game,id=game.id,first=game.targets[0];
+ assert.equal((await request('start',{})).status,400);
+ assert.equal((await request('shot',{id,target:29,x:0,y:0})).status,400);
+ r=await request('shot',{id,target:0,x:first.x,y:first.y,reward:999999});assert.equal(r.status,200);assert.equal(r.data.game.reward,6);assert.equal(r.data.balance,900);
+ assert.equal((await request('shot',{id,target:0,x:first.x,y:first.y})).status,400);
+ r=await request('finish',{id});assert.equal(r.data.game.status,'finished');assert.equal(r.data.game.misses,29);assert.equal(r.data.game.paid,0);assert.equal(r.data.balance,900);assert.equal(r.data.leaders[0].hits,1);
+ r=await request('finish',{id});assert.equal(r.data.balance,900);assert.equal(r.data.ledger.filter(x=>x.label.startsWith('Round settled')).length,1);
+ r=await request('refill',{});assert.equal(r.data.balance,1900);assert.equal((await request('refill',{})).status,400);
+ r=await request('start',{});const second=r.data.game.id;const database=new DatabaseSync(dir+'/aim.sqlite');database.prepare('UPDATE rounds SET started=? WHERE id=?').run(Date.now()-31000,second);database.close();
+ r=await request('state');assert.equal(r.data.game.status,'finished');assert.equal(r.data.game.misses,30);assert.equal(r.data.balance,1800);
+ r=await request('start',{});const winner=r.data.game.id,winning=createGame(321);for(const target of winning.targets)shoot(winning,target.at+100,target.id,target.x,target.y);
+ const winningDb=new DatabaseSync(dir+'/aim.sqlite');winningDb.prepare('UPDATE rounds SET state=?,started=? WHERE id=?').run(JSON.stringify(winning),Date.now()-31000,winner);winningDb.close();
+ r=await request('state');assert.equal(r.data.game.paid,440);assert.equal(r.data.balance,2140);r=await request('finish',{id:winner});assert.equal(r.data.balance,2140);
+ const other=await fetch('http://127.0.0.1:3097/api/state');assert.equal((await other.json()).balance,1000);
+ for(const path of ['/','/app.js','/game.js','/style.css'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
+});
