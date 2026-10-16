@@ -1,6 +1,6 @@
 # AimRush
 
-Playable aim-training prototype inspired by the general genre of **Aimlabs**: timed circular targets, per-hit demo rewards, streak bonuses, miss penalties, persistent wallet, and a local leaderboard. Original name, visuals and implementation; not affiliated with Aimlabs.
+Browser-based aim-training prototype with a Portuguese interface and simulated BRL balances. Playable aim-training prototype inspired by the general genre of **Aimlabs**: timed circular targets, per-hit demo rewards, streak bonuses, miss penalties, persistent wallet, and a local leaderboard. Original name, visuals and implementation; not affiliated with Aimlabs.
 
 **This version uses free demo credits only.** It has no deposits, purchases, withdrawals or cash prizes.
 
@@ -18,7 +18,13 @@ The server runs on loopback port 3100. `HOST` and `PORT` override the listening 
 
 The environment is already isolated: use this checkout directly; no Git worktree is needed.
 
-## Gameplay and exact credit rules
+## Displayed currency and balance
+
+All existing integer credit amounts are now presented as **simulated centavos**, not whole reais. Thus 1,000 internal units display as R$ 10,00, entry 100 as R$ 1,00, a hit 6 as R$ 0,06, and a perfect run returns R$ 4,40 (net +R$ 3,40). No wallet migration, real-money conversion, purchase or payout occurs. Existing saved balances retain their integer amounts.
+
+The header, wallet card and in-arena wallet show available balance. During a round, the separate estimated balance is `available balance + provisional return`, while net round result is shown separately. Estimates can fall when targets expire. Final settlement is authoritative on the server.
+
+## Gameplay and exact internal-unit rules
 
 - Each round reserves a **100-credit stake** from the demo wallet and lasts **30 seconds**.
 - **30 targets** appear one per second. Each remains available for **950 ms**.
@@ -33,7 +39,7 @@ The environment is already isolated: use this checkout directly; no Git worktree
 - Accuracy is successful shots divided by successful plus penalized off-target shots. Target coverage is tracked separately. Average reaction uses successful hits only and includes network transit to the server.
 - Free refill adds 1,000 credits when the wallet is below 1,000.
 
-A mouse is recommended. Sound is optional and generated locally. Fullscreen depends on browser support.
+A mouse is recommended. Sound effects and background music have independent controls. The background track is an original procedural 104 BPM electronic loop generated locally with Web Audio (bass, melody, pads and percussion), with no external audio downloads. Click “Tocar” to enable music; browsers require interaction before playing audio. The volume slider is remembered locally, and music pauses while the tab is hidden. No automatic sound starts on page load. Fullscreen depends on browser support.
 
 ## Ranking
 
@@ -52,9 +58,11 @@ The server validates target timing, target ID, coordinates, geometry and duplica
 
 The selected reference is **Aimlabs**, named by the project owner: https://store.steampowered.com/app/714010/Aimlabs/
 
-This establishes the genre reference, not evidence of demand for cash play. No assertion is made about Aimlabs supporting this payment model or about its current revenue or player counts. Attempts to retrieve official Skillz and Papaya pages for the earlier block-puzzle direction failed with network-proxy 403 responses. No current market-validation study was completed.
+This establishes the genre reference, not evidence of demand for cash play. The requested Blockwin design URL could not be accessed from this environment (proxy 403). The redesign is an original dark/green proposal, not a verified reproduction or study of that site. Screenshots are needed to compare specific visual details.
 
-The intended launch country remains unspecified. The interface is English as requested for an international audience.
+No assertion is made about Aimlabs supporting this payment model or about its current revenue or player counts. Attempts to retrieve official Skillz and Papaya pages for the earlier block-puzzle direction failed with network-proxy 403 responses. No current market-validation study was completed.
+
+The intended launch country remains unspecified. The interface is now in Brazilian Portuguese following the request to display reais.
 
 ## Before real-money operation
 
@@ -64,4 +72,4 @@ There are no embedded credentials or payment keys. Do not connect this demo wall
 
 ## Validation
 
-Run `npm test` for seven tests: repeatable target layouts, combo rewards, expired-target penalties, invalid/duplicate/future shots, wrong-shot penalties, payout boundaries, and a full HTTP wallet/round/ranking lifecycle. The HTTP test uses port 3097 and a temporary SQLite database. Browser validation is performed separately against the running server, including mouse aiming and a mobile viewport.
+Run `npm test` for nine tests, including BRL formatting, existing ledger translation, and: repeatable target layouts, combo rewards, expired-target penalties, invalid/duplicate/future shots, wrong-shot penalties, payout boundaries, and a full HTTP wallet/round/ranking lifecycle. The HTTP test uses port 3097 and a temporary SQLite database. Browser validation is performed separately against the running server, including mouse aiming, BRL balances, music start/pause/volume, and mobile viewports.

@@ -33,5 +33,5 @@ test('HTTP lifecycle: authoritative rewards, expiry, wallet, idempotency, local 
  const winningDb=new DatabaseSync(dir+'/aim.sqlite');winningDb.prepare('UPDATE rounds SET state=?,started=? WHERE id=?').run(JSON.stringify(winning),Date.now()-31000,winner);winningDb.close();
  r=await request('state');assert.equal(r.data.game.paid,440);assert.equal(r.data.balance,2140);r=await request('finish',{id:winner});assert.equal(r.data.balance,2140);
  const other=await fetch('http://127.0.0.1:3097/api/state');assert.equal((await other.json()).balance,1000);
- for(const path of ['/','/app.js','/game.js','/style.css'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
+ for(const path of ['/','/app.js','/game.js','/style.css','/format.js','/music.js'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
 });
