@@ -1,12 +1,12 @@
 # AimRush
 
-Browser-based aim-training prototype with a Portuguese interface and simulated BRL balances. Playable aim-training prototype inspired by the general genre of **Aimlabs**: timed circular targets, per-hit demo rewards, streak bonuses, miss penalties, persistent wallet, and a local leaderboard. Original name, visuals and implementation; not affiliated with Aimlabs.
+Browser-based aim-training prototype in Brazilian Portuguese. Circular targets, per-hit virtual rewards, combo bonuses, missed-target penalties, a persistent demo wallet and a local ranking. Original implementation and visuals; not affiliated with Aimlabs or Blockwin.
 
-**This version uses free demo credits only.** It has no deposits, purchases, withdrawals or cash prizes.
+**Free simulated BRL only. No deposits, purchases, cash prizes or withdrawals.**
 
 ## Run
 
-Requires Node.js 24+ for built-in `node:sqlite`. No npm dependencies, installation or build step.
+Requires Node.js 24+ with built-in `node:sqlite`. No external dependencies, installation or build step.
 
 ```sh
 cd /workspace/sla
@@ -14,62 +14,53 @@ npm test
 npm start
 ```
 
-The server runs on loopback port 3100. `HOST` and `PORT` override the listening interface and port; only expose it deliberately as a demo. `DATA_DIR` overrides local SQLite storage, normally `data/aim.sqlite`. Stop with Ctrl+C. Restarting preserves wallets and rounds; deadlines continue while the server is stopped.
+Default: loopback port 3100. `HOST` and `PORT` override the listening interface and port. `DATA_DIR` overrides storage, normally `data/aim.sqlite`. Restarting preserves local wallets and rounds; deadlines continue while the server is stopped. The environment is isolated: use the checkout directly, without a new Git worktree.
 
-The environment is already isolated: use this checkout directly; no Git worktree is needed.
+See `PUBLISH.md` and `render.yaml` for a hosted browser demo. The Render free filesystem is ephemeral; this configuration does not provide durable production storage.
 
-## Displayed currency and balance
+## Interface
 
-All existing integer credit amounts are now presented as **simulated centavos**, not whole reais. Thus 1,000 internal units display as R$ 10,00, entry 100 as R$ 1,00, a hit 6 as R$ 0,06, and a perfect run returns R$ 4,40 (net +R$ 3,40). No wallet migration, real-money conversion, purchase or payout occurs. Existing saved balances retain their integer amounts.
+The lobby follows the supplied visual reference: deep blue grid background, central rounded card, original colorful aim-themed banner, top-right balance and fixed bottom navigation. Navigation opens the wallet, ranking, lobby/game, rules and audio screens. There are no fabricated online counts, referral rewards or fake payment forms.
 
-The header, wallet card and in-arena wallet show available balance. During a round, the separate estimated balance is `available balance + provisional return`, while net round result is shown separately. Estimates can fall when targets expire. Final settlement is authoritative on the server.
+Entry presets: **R$ 5, 10, 20, 30, 50 and 100**. A custom field accepts **R$ 1,00–100,00**, including centavos. The initial demo balance is R$ 10,00. The free wallet refill completes the balance up to R$ 100,00. It never charges money.
 
-## Gameplay and exact internal-unit rules
+The target-site URL returned proxy 403, including a second attempt. The supplied screenshot, rather than an authenticated website inspection, informed the layout. No third-party login was performed.
 
-- Each round reserves a **100-credit stake** from the demo wallet and lasts **30 seconds**.
-- **30 targets** appear one per second. Each remains available for **950 ms**.
-- A hit inside the circular target earns **6 credits**, plus the current streak bonus.
-- Every 5 consecutive hits increases the bonus by 2 credits per hit, capped at 10 extra. The fifth hit already receives the first bonus.
-- Letting a target expire costs **4 credits** and resets the streak.
-- An off-target shot costs **2 credits** and resets the streak. Only one off-target penalty is permitted per target. You may still hit that target afterward.
-- Shots between targets and after a target was hit do not score. Touch and mouse use the same circular hit region.
-- Ending early counts every remaining target as missed. Refreshing does not pause or restart a round.
-- Final payout is `max(0, 100 + hit rewards − penalties)`. The stake was already deducted at entry; net round result is payout minus 100. A no-hit run loses the 100-credit stake. A perfect 30-hit run earns 340 net credits and returns 440 total.
-- Credits displayed during the round are provisional; wallet settlement happens at the end.
-- Accuracy is successful shots divided by successful plus penalized off-target shots. Target coverage is tracked separately. Average reaction uses successful hits only and includes network transit to the server.
-- Free refill adds 1,000 credits when the wallet is below 1,000.
+## Amounts and game rules
 
-A mouse is recommended. Sound effects and background music have independent controls. The background track is an original procedural 104 BPM electronic loop generated locally with Web Audio (bass, melody, pads and percussion), with no external audio downloads. Click “Tocar” to enable music; browsers require interaction before playing audio. The volume slider is remembered locally, and music pauses while the tab is hidden. No automatic sound starts on page load. Fullscreen depends on browser support.
+All database amounts are integer **simulated centavos**. Existing balances keep their values: 1,000 internal units display as R$ 10,00. No conversion to actual money or database migration occurs.
 
-## Ranking
+1. Entry is reserved immediately and stored with the round. It cannot change during play. The API defaults to R$ 1,00 for backward compatibility; the lobby initially selects R$ 5,00.
+2. A round contains **30 targets over 30 seconds**, one per second, with **950 ms** availability per target.
+3. Each hit earns **6% of the entry**. Every five consecutive hits adds 2 percentage points per hit, up to 10 points extra. The fifth hit receives the first bonus.
+4. A missed target costs **4% of the entry**, and an off-target shot costs **2%**. Either resets the combo. Only one off-target penalty is applied per target; it may still be hit afterward.
+5. Each individual reward/penalty is rounded to a centavo. The UI maximum-return preview uses the same rounding and bonus rules as the server.
+6. Final return is `max(0, entry + rewards − penalties)`. Net result is return minus the reserved entry. Ending early marks all remaining targets as missed. Reloading does not pause a round.
+7. The maximum return is a perfect 30-hit run without errors, including the entry. It is not a guaranteed minimum. The rounded maximum for R$ 5,00 entry is **R$ 22,00** returned, **+R$ 17,00** net. With six opening hits and then early finish: **R$ 2,20** return, **−R$ 2,80** net.
 
-The leaderboard shows the best finished hit count per anonymous browser account on this server, up to ten accounts. No fake players, global ranking or manufactured online counts. Ties are sorted by internal account ID. Clearing cookies creates a fresh demo account; this is not production account authentication.
+Amounts on older rounds lacking an `entry` field continue to use their original R$ 1,00 entry and scoring. The header shows available funds; the in-game estimated balance adds the provisional return. Wallet settlement occurs once, on the server, when the round ends.
+
+Accuracy is hits divided by hits plus penalized off-target shots. Target coverage is distinct. Average hit reaction includes network transit. A mouse is recommended; touch also works.
+
+## Audio
+
+Background music and hit effects have independent controls. The original 104 BPM electronic loop is synthesized locally with Web Audio: melody, pads, bass and percussion. No external music or asset download is required. Choose Áudio → Tocar to start, pause with the same control, and adjust volume with the slider. Volume is saved locally. Music pauses while the tab is hidden. Browsers require a user gesture to enable audio; nothing plays on initial load.
 
 ## Implementation
 
-- `game.js`: seeded target layout, hit detection, timing rules, streaks and settlement calculations.
-- `server.js`: authoritative scoring and deadline, wallet transactions, idempotent settlement, persistent SQLite data, HttpOnly SameSite cookie sessions and local leaderboard.
-- `public/`: responsive canvas range, crosshair, live round result, sound, wallet and ranking.
-- `test/game.test.js`: rule tests and HTTP integration tests using temporary isolated databases.
+- `game.js`: seeded target positions, per-round stake, geometry, deadlines, proportional rewards, combos, maximum preview and settlement.
+- `server.js`: authoritative scoring, SQLite wallet transactions, idempotent settlement, anonymous HttpOnly SameSite cookies and local ranking.
+- `public/`: blue lobby, gameplay canvas, wallet, rules, ranking, audio, BRL formatting and entry parsing.
+- `test/`: engine, HTTP integration, legacy data compatibility and currency/input tests.
 
-The server validates target timing, target ID, coordinates, geometry and duplicate hits. It ignores client-supplied rewards and scores. These checks **do not prevent aimbots**: target coordinates are available to the browser, and fabricated clicks within valid timing are possible. Random target layouts also make this unsuitable for a calibrated competitive cash format. Real anti-cheat, equivalent challenge conditions and fairness evaluation are separate engineering work.
-
-## Reference and research status
-
-The selected reference is **Aimlabs**, named by the project owner: https://store.steampowered.com/app/714010/Aimlabs/
-
-This establishes the genre reference, not evidence of demand for cash play. The requested Blockwin design URL could not be accessed from this environment (proxy 403). The redesign is an original dark/green proposal, not a verified reproduction or study of that site. Screenshots are needed to compare specific visual details.
-
-No assertion is made about Aimlabs supporting this payment model or about its current revenue or player counts. Attempts to retrieve official Skillz and Papaya pages for the earlier block-puzzle direction failed with network-proxy 403 responses. No current market-validation study was completed.
-
-The intended launch country remains unspecified. The interface is now in Brazilian Portuguese following the request to display reais.
-
-## Before real-money operation
-
-This is a local functional prototype, not a payment-ready business. A cash launch still requires the specific country, operating rules and accepted payment provider; applicable classification cannot be inferred from the label “skill game.” It also requires account/identity/age and location controls as applicable, deposits and withdrawal reconciliation, bot/fraud prevention, a calibrated payout model, and production deployment and recovery work. The generous demo rewards are design defaults and do not demonstrate sustainable cash economics.
-
-There are no embedded credentials or payment keys. Do not connect this demo wallet to money as if it were a financial ledger.
+The ranking shows the best finished hit count per anonymous browser account on this server, up to ten accounts. Clearing cookies creates a fresh account. This is a demo session, not account authentication or recovery.
 
 ## Validation
 
-Run `npm test` for nine tests, including BRL formatting, existing ledger translation, and: repeatable target layouts, combo rewards, expired-target penalties, invalid/duplicate/future shots, wrong-shot penalties, payout boundaries, and a full HTTP wallet/round/ranking lifecycle. The HTTP test uses port 3097 and a temporary SQLite database. Browser validation is performed separately against the running server, including mouse aiming, BRL balances, music start/pause/volume, and mobile viewports.
+`npm test` runs **12 tests**, including stake validation, proportional payouts, exact maximum-preview matching, old-round compatibility, BRL input/formatting and the HTTP wallet lifecycle. HTTP tests use temporary isolated SQLite databases and port 3097. Browser checks cover entry selection, custom amounts, real canvas hits, settlement, insufficient balance and refill, screen navigation, audio controls, mobile widths and touch.
+
+## Production limitations
+
+The browser knows the target positions. Timing and geometry validation **do not prevent aimbots**; fabricated in-time coordinates are possible. Random layouts are not an independently calibrated competitive format. The generous demo reward model is not evidence of sustainable cash economics or commercial demand.
+
+There is no payment integration, real-money ledger, identity/age/location verification, production account security, fraud detection or production operations. A cash launch requires a specified country, an accepted operating model and payment provider, equivalent challenge conditions, bot prevention and suitable infrastructure. The label “skill game” alone does not establish legal classification. Do not connect this demo wallet to money as if it were a financial ledger.

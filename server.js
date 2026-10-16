@@ -30,15 +30,16 @@ const server=http.createServer(async(req,res)=>{
  if(row){if(Date.now()>=row.started+RULES.duration)row=settle(row);else{const g=JSON.parse(row.state);advance(g,Date.now()-row.started);row={...row,state:JSON.stringify(g)};run('UPDATE rounds SET state=? WHERE id=?',row.state,row.id);}}
  if(req.method==='POST'&&path==='/api/start'){
  if(row?.status==='active')throw Error('Encerre a partida atual antes de começar outra.');
- if(get('SELECT balance FROM players WHERE id=?',id).balance<RULES.entry)throw Error('Saldo virtual insuficiente. Use a recarga gratuita.');
- const gid=randomUUID();entry(id,-RULES.entry,'Round entry · refundable stake');run('INSERT INTO rounds(id,player,state,started,status) VALUES(?,?,?,?,?)',gid,id,JSON.stringify(createGame(randomBytes(4).readUInt32LE())),Date.now(),'active');row=get('SELECT * FROM rounds WHERE id=?',gid);
+ const amount=body.entry===undefined?RULES.entry:body.entry;const game=createGame(randomBytes(4).readUInt32LE(),amount);
+ if(get('SELECT balance FROM players WHERE id=?',id).balance<amount)throw Error('Saldo virtual insuficiente. Use a recarga gratuita.');
+ const gid=randomUUID();entry(id,-amount,'Round entry · refundable stake');run('INSERT INTO rounds(id,player,state,started,status) VALUES(?,?,?,?,?)',gid,id,JSON.stringify(game),Date.now(),'active');row=get('SELECT * FROM rounds WHERE id=?',gid);
  }else if(req.method==='POST'&&path==='/api/shot'){
  if(!row||row.status!=='active'||body.id!==row.id)throw Error('Esta partida já terminou.');
  const g=JSON.parse(row.state);event=shoot(g,Date.now()-row.started,body.target,body.x,body.y);run('UPDATE rounds SET state=? WHERE id=?',JSON.stringify(g),row.id);row={...row,state:JSON.stringify(g)};
  }else if(req.method==='POST'&&path==='/api/finish'){
  if(row?.status==='active'&&body.id===row.id)row=settle(row);
  }else if(req.method==='POST'&&path==='/api/refill'){
- if(get('SELECT balance FROM players WHERE id=?',id).balance>=1000)throw Error('Você já tem pelo menos R$ 10,00 de saldo virtual.');entry(id,1000,'Free demo refill');
+ const balance=get('SELECT balance FROM players WHERE id=?',id).balance;if(balance>=10000)throw Error('Você já tem pelo menos R$ 100,00 de saldo virtual.');entry(id,10000-balance,'Free demo refill');
  }else if(!(req.method==='GET'&&path==='/api/state'))throw Error('Operação desconhecida.');
  if(!row)row=get('SELECT * FROM rounds WHERE player=? ORDER BY started DESC LIMIT 1',id);
  const leaders=db.prepare("SELECT player,MAX(json_extract(state,'$.hits')) AS hits FROM rounds WHERE status='finished' GROUP BY player ORDER BY hits DESC,player LIMIT 10").all().map((p,i)=>({rank:i+1,name:'Player '+p.player.slice(0,6).toUpperCase(),hits:p.hits,you:p.player===id}));

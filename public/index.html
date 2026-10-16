@@ -1,81 +1,57 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0b1010">
-  <meta name="description" content="Desafie sua mira em partidas de 30 segundos. Acerte alvos, faça combos e acompanhe seu desempenho no AimRush. Demonstração com saldo virtual.">
-  <title>AimRush — Sua mira em outro nível</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#061442"><meta name="description" content="AimRush: desafio de mira de 30 segundos, combos e ranking. Demonstração com saldo virtual.">
+  <title>AimRush — Entre na mira</title><link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body data-page="lobby">
   <header class="topbar">
-    <a class="brand" href="/" aria-label="AimRush, início"><span class="brand-mark" aria-hidden="true"></span><strong>AIM<span>RUSH</span><small>PRECISION ARENA</small></strong></a>
-    <nav aria-label="Navegação principal"><a class="current" href="#arena">Jogar</a><a href="#ranking">Ranking</a><a href="#rules">Como funciona</a></nav>
-    <div class="header-wallet"><span class="demo-tag">SALDO VIRTUAL</span><button id="walletButton" aria-label="Ver carteira"><small>SEU SALDO</small><span id="balance">R$ —</span><span class="wallet-plus" aria-hidden="true">+</span></button></div>
+    <a class="brand" href="#jogar" data-open="lobby" aria-label="AimRush, início"><span class="brand-cross" aria-hidden="true"></span><strong>AIM<span>RUSH</span></strong><small>PRECISION GAME</small></a>
+    <div class="header-wallet"><button id="walletButton" aria-label="Abrir carteira"><small>SALDO VIRTUAL</small><strong id="balance">R$ —</strong></button><button class="avatar" data-open="rules" aria-label="Como jogar">A</button></div>
   </header>
   <main>
-    <section class="welcome"><p><span class="status-dot"></span> SUA PRÓXIMA PARTIDA COMEÇA AQUI</p><span>Sem instalação. Direto no navegador.</span></section>
-    <section class="hero-grid" aria-label="Apresentação e carteira">
-      <div class="hero">
-        <div class="hero-content"><span class="eyebrow">DOMINE O ALVO. SUPERE SEU RECORDE.</span><h1>Sua mira.<br><span>Outro nível.</span></h1><p>Precisão que vira resultado. Entre na arena,<br>acerte os alvos e mantenha a sequência.</p><a class="primary hero-cta" href="#arena">Ir para a arena <span aria-hidden="true">→</span></a><span class="hero-caption">30 segundos para mostrar sua habilidade.</span></div>
-        <div class="hero-art" aria-hidden="true"><div class="art-grid"></div><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="orb orb-three"></div><div class="art-crosshair"></div><span class="art-chip">PRECISION + COMBO</span></div>
+    <section id="lobbyView" data-view="lobby" class="lobby-view">
+      <div class="lobby-card">
+        <div class="game-banner">
+          <span class="banner-badge">DESAFIO DE MIRA</span>
+          <div class="banner-text"><h1>ACERTE<br><span>OS ALVOS</span><br><em>FAÇA SEU COMBO</em></h1><p>Sua precisão faz a diferença.</p></div>
+          <div class="banner-art" aria-hidden="true"><div class="target-orbit"></div><div class="sphere sphere-one"></div><div class="sphere sphere-two"></div><div class="sphere sphere-three"></div><div class="crosshair-art"></div><span class="combo-chip">COMBO 5×</span><span class="art-spark spark-one">+</span><span class="art-spark spark-two">+</span></div>
+          <div class="banner-footer"><span>30 SEGUNDOS</span><span>30 ALVOS</span><span>PRECISÃO + COMBO</span></div>
+        </div>
+        <div class="lobby-body">
+          <label class="field-label" for="entryAmount">VALOR DE ENTRADA <span>SALDO VIRTUAL</span></label>
+          <div class="entry-presets" role="group" aria-label="Escolha a entrada virtual"><button data-entry="500" aria-pressed="true">R$ 5</button><button data-entry="1000" aria-pressed="false">R$ 10</button><button data-entry="2000" aria-pressed="false">R$ 20</button><button data-entry="3000" aria-pressed="false">R$ 30</button><button data-entry="5000" aria-pressed="false">R$ 50</button><button data-entry="10000" aria-pressed="false">R$ 100</button></div>
+          <div class="entry-input"><span aria-hidden="true">R$</span><input id="entryAmount" type="text" inputmode="decimal" value="5,00" autocomplete="off" maxlength="6" aria-describedby="entryHelp entryError"><span class="edit-hint">editar</span></div>
+          <p id="entryHelp" class="input-help">Escolha um valor ou digite de R$ 1,00 a R$ 100,00.</p><p id="entryError" class="error-message" role="status"></p>
+          <div class="payout-card"><span>Retorno máximo simulado</span><strong id="maxPayout">R$ 22,00</strong><small>30 de 30 acertos · combo máximo · inclui a entrada</small></div>
+          <button id="playLobby" class="play-button">Jogar com saldo virtual <span aria-hidden="true">→</span></button>
+          <p id="lobbyMessage" class="lobby-message" role="status">Acerte os alvos antes de desaparecerem. Erros reduzem o retorno.</p>
+        </div>
       </div>
-      <aside class="balance-card" id="walletSummary">
-        <div class="balance-card-top"><span class="wallet-symbol" aria-hidden="true">R$</span><span class="demo-tag">DEMONSTRAÇÃO</span></div>
-        <p class="balance-label">Seu saldo disponível</p><strong id="heroBalance" class="hero-balance">R$ —</strong>
-        <div class="wallet-detail"><span>Entrada por partida</span><b>R$ 1,00</b></div>
-        <button id="refill" class="primary">Adicionar saldo virtual <span aria-hidden="true">+</span></button>
-        <p class="wallet-fine">Recarga gratuita de R$ 10,00 quando o saldo estiver abaixo de R$ 10,00. Valores simulados, sem saque.</p>
-      </aside>
+      <p class="demo-note"><span></span> Modo demonstração · sem depósitos ou saques reais.</p>
     </section>
-    <section class="quick-stats" aria-label="Regras rápidas">
-      <div><span class="stat-icon" aria-hidden="true">01</span><div><small>ENTRADA VIRTUAL</small><strong>R$ 1,00 <span>/ partida</span></strong></div></div>
-      <div><span class="stat-icon" aria-hidden="true">+</span><div><small>ACERTO NO ALVO</small><strong>+R$ 0,06 <span>/ acerto</span></strong></div></div>
-      <div><span class="stat-icon" aria-hidden="true">5×</span><div><small>SEQUÊNCIA PREMIADA</small><strong>+R$ 0,02 <span>/ nível de bônus</span></strong></div></div>
-      <div><span class="stat-icon" aria-hidden="true">30</span><div><small>PARTIDA RÁPIDA</small><strong>30 segundos <span>/ rodada</span></strong></div></div>
-    </section>
-    <section id="arena" class="arena-section">
-      <div class="section-head"><div><span class="eyebrow">FOCO NO PRÓXIMO ACERTO</span><h2>A arena é sua<span class="accent">.</span></h2></div><span class="mode-tag"><span class="status-dot"></span> SOLO · ALVOS ESTÁTICOS</span></div>
-      <div class="play-layout">
-        <section class="play-panel" aria-label="Jogo de mira">
-          <div class="gamebar"><div><span class="status-dot"></span><span id="phase">PRONTO PARA JOGAR</span></div><button id="fullscreen" class="quiet-button">Tela cheia <span aria-hidden="true">⛶</span></button></div>
-          <div class="round-wallet"><div><span>SALDO DISPONÍVEL</span><strong id="roundWallet">R$ —</strong></div><div><span>RESULTADO DA RODADA</span><strong id="net" class="positive">R$ 0,00</strong></div><div class="projected"><span>SALDO APÓS A RODADA <small>estimado</small></span><strong id="projectedBalance">R$ —</strong></div></div>
-          <div id="canvasWrap" class="canvas-wrap">
-            <canvas id="range" width="1000" height="600" tabindex="0" aria-label="Arena de mira. Clique ou toque nas bolinhas antes que desapareçam."></canvas>
-            <div id="overlay" class="overlay">
-              <span class="overlay-target" aria-hidden="true"></span>
-              <span class="eyebrow" id="overlayLabel">SUA PRECISÃO É O DIFERENCIAL</span>
-              <h2 id="overlayTitle">Pronto para o desafio?</h2>
-              <strong id="overlayResult" class="overlay-result" hidden></strong>
-              <p id="overlayText">30 alvos. Uma chance por segundo.<br>Acerte, faça combos e supere seu recorde.</p>
-              <button id="start" class="primary">Começar partida <span>R$ 1,00 →</span></button>
-              <small id="overlayFine">Entrada e recompensas em saldo virtual.</small>
-            </div>
-            <div id="feedback" class="feedback" aria-hidden="true"></div>
-            <div class="range-label">AIMRUSH / SETOR 01</div><div class="range-bottom"><span>CLIQUE OU TOQUE PARA ATIRAR</span><span id="targetCount">00 / 30 ALVOS</span></div>
-          </div>
-          <div class="hud"><div><span>TEMPO RESTANTE</span><strong id="timer">30,0s</strong></div><div><span>ACERTOS</span><strong id="hits">0 / 30</strong></div><div><span>PRECISÃO</span><strong id="accuracy">—</strong></div><div><span>COMBO ATUAL</span><strong id="streak">0×</strong></div></div>
-          <div class="game-footer"><p id="message" role="status">Use o mouse ou toque nos alvos. A partida começa ao clicar no botão.</p><button id="finish" class="quiet-button" hidden>Encerrar</button></div>
-        </section>
-        <aside class="side-panel">
-          <div class="side-heading"><span class="eyebrow">CADA ACERTO CONTA</span><h3>Construa seu combo.</h3><p>Mais precisão. Mais sequência.<br>Mais resultado dentro da rodada.</p></div>
-          <div class="reward-row"><span class="reward-icon" aria-hidden="true">+</span><div><b>Acertou o alvo</b><small>Clique dentro da bolinha</small></div><strong>+R$ 0,06</strong></div>
-          <div class="reward-row"><span class="reward-icon amber" aria-hidden="true">5×</span><div><b>Bônus de combo</b><small>A cada 5 acertos seguidos</small></div><strong class="amber-text">+R$ 0,02</strong></div>
-          <div class="reward-row"><span class="reward-icon red" aria-hidden="true">−</span><div><b>Deixou passar</b><small>O alvo expirou</small></div><strong class="negative">−R$ 0,04</strong></div>
-          <div class="reward-row"><span class="reward-icon red" aria-hidden="true">×</span><div><b>Tiro fora do alvo</b><small>Uma penalidade por alvo</small></div><strong class="negative">−R$ 0,02</strong></div>
-          <div class="streak-card"><div><b>SEU BÔNUS ATUAL</b><span id="bonus">+R$ 0,00 / acerto</span></div><div class="segments" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><p id="streakHint">5 acertos seguidos liberam o primeiro bônus.</p></div>
-          <section class="audio-card" aria-label="Controles de áudio"><div><span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span><div><b>Entre no ritmo</b><small>Trilha eletrônica original</small></div><button id="music" aria-pressed="false">Tocar</button></div><label for="musicVolume">Volume da música <output id="volumeLabel" for="musicVolume">25%</output></label><input id="musicVolume" type="range" min="0" max="100" value="25"><button id="sound" class="quiet-button" aria-pressed="false">Efeitos sonoros: desligados</button><p id="audioStatus" role="status">A música começa quando você tocar em “Tocar”.</p></section>
-        </aside>
+    <section id="gameView" data-view="game" hidden>
+      <div class="screen-title"><button id="backLobby" class="back-button">← Escolher entrada</button><span id="gameEntry" class="mode-tag">ENTRADA R$ 5,00</span></div>
+      <div class="play-panel">
+        <div class="gamebar"><div><span class="status-dot"></span><span id="phase">PRONTO PARA JOGAR</span></div><button id="fullscreen" class="quiet-button">Tela cheia ⛶</button></div>
+        <div class="round-wallet"><div><span>SALDO DISPONÍVEL</span><strong id="roundWallet">R$ —</strong></div><div><span>RESULTADO DA RODADA</span><strong id="net" class="positive">R$ 0,00</strong></div><div class="projected"><span>SALDO ESTIMADO APÓS A RODADA</span><strong id="projectedBalance">R$ —</strong></div></div>
+        <div id="canvasWrap" class="canvas-wrap"><canvas id="range" width="1000" height="600" tabindex="0" aria-label="Arena de mira. Clique ou toque nas bolinhas antes que desapareçam."></canvas>
+          <div id="overlay" class="overlay"><span class="overlay-target" aria-hidden="true"></span><span id="overlayLabel" class="eyebrow">SUA PRECISÃO É O DIFERENCIAL</span><h2 id="overlayTitle">Pronto para o desafio?</h2><strong id="overlayResult" class="overlay-result" hidden></strong><p id="overlayText">30 alvos. Uma chance por segundo.<br>Acerte, faça combos e supere seu recorde.</p><button id="start" class="play-button">Jogar novamente <span>R$ 5,00 →</span></button><small id="overlayFine">Entrada e recompensas em saldo virtual.</small></div>
+          <div id="feedback" class="feedback" aria-hidden="true"></div><div class="range-label">AIMRUSH / PRECISION LAB</div><div class="range-bottom"><span>CLIQUE OU TOQUE PARA ATIRAR</span><span id="targetCount">00 / 30 ALVOS</span></div>
+        </div>
+        <div class="hud"><div><span>TEMPO RESTANTE</span><strong id="timer">30,0s</strong></div><div><span>ACERTOS</span><strong id="hits">0 / 30</strong></div><div><span>PRECISÃO</span><strong id="accuracy">—</strong></div><div><span>COMBO ATUAL</span><strong id="streak">0×</strong></div></div>
+        <div class="game-footer"><p id="message" role="status">Use o mouse ou toque nos alvos.</p><button id="finish" class="quiet-button" hidden>Encerrar</button></div>
       </div>
+      <div class="streak-card"><div><b>SEU BÔNUS ATUAL</b><span id="bonus">+R$ 0,00 / acerto</span></div><div class="segments" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><p id="streakHint">5 acertos seguidos liberam o primeiro bônus.</p></div>
     </section>
-    <section class="lower-grid">
-      <section id="ranking" class="card"><div class="section-head"><div><span class="eyebrow">QUEM DOMINA A ARENA?</span><h2>Ranking de precisão</h2></div><span class="badge">NESTE SERVIDOR</span></div><div class="table-head"><span>JOGADOR</span><span>MELHOR PARTIDA</span></div><div id="leaders"><p class="empty">Conclua uma partida e marque seu lugar.</p></div><p class="fine">Melhor número de acertos por conta de navegador. Sem jogadores fictícios.</p></section>
-      <section id="wallet" class="card"><div class="section-head"><div><span class="eyebrow">TUDO À VISTA</span><h2>Seu histórico</h2></div><span class="badge">VALORES SIMULADOS</span></div><div id="ledger"></div><p class="fine">O saldo da carteira é atualizado ao encerrar a partida.</p></section>
-    </section>
-    <section id="rules" class="how"><div><span class="eyebrow">SEM COMPLICAÇÃO</span><h2>Da entrada ao resultado.</h2></div><div><b>01 <span>Entre na arena</span></b><p>R$ 1,00 virtual é reservado do saldo. Jogue com mouse ou toque na tela.</p></div><div><b>02 <span>Mantenha o foco</span></b><p>O alvo dura 950 ms. Errar ou deixar passar quebra o combo. O bônus por acerto cresce até R$ 0,10 extra.</p></div><div><b>03 <span>Confira o resultado</span></b><p>Retorno = R$ 1,00 + acertos e bônus − penalidades, com mínimo zero. Encerrar antes conta os alvos restantes como perdidos.</p></div></section>
-    <footer><a class="brand" href="#"><span class="brand-mark" aria-hidden="true"></span><strong>AIM<span>RUSH</span></strong></a><p>Protótipo independente, sem vínculo com Aimlabs.<br>Saldo virtual para demonstração. Sem depósitos, saques ou dinheiro real.</p><span>PRECISÃO EM CADA MOVIMENTO.</span></footer>
+    <section id="walletView" data-view="wallet" class="screen-card" hidden><span class="eyebrow">SUA CARTEIRA</span><h2>Saldo de demonstração</h2><div class="wallet-total"><small>DISPONÍVEL PARA JOGAR</small><strong id="heroBalance">R$ —</strong></div><button id="refill" class="play-button">Completar saldo até R$ 100,00 <span>+</span></button><p class="fine">Recarga virtual gratuita. Não há depósito, saque ou conversão em dinheiro.</p><h3>Histórico de movimentações</h3><div id="ledger"></div></section>
+    <section id="rankingView" data-view="ranking" class="screen-card" hidden><span class="eyebrow">QUEM DOMINA A ARENA?</span><h2>Ranking de precisão</h2><p class="fine">Melhor número de acertos por conta neste servidor.</p><div class="table-head"><span>JOGADOR</span><span>MELHOR PARTIDA</span></div><div id="leaders"><p class="empty">Conclua uma partida e marque seu lugar.</p></div></section>
+    <section id="rulesView" data-view="rules" class="screen-card" hidden><span class="eyebrow">COMO FUNCIONA</span><h2>Da entrada ao resultado.</h2><div class="rule-step"><b>01</b><div><h3>Escolha sua entrada</h3><p>De R$ 1,00 a R$ 100,00 de saldo virtual. A entrada é reservada até o fim da rodada.</p></div></div><div class="rule-step"><b>02</b><div><h3>Acerte. Emende. Repita.</h3><p>São 30 alvos em 30 segundos. Cada um fica visível por 950 ms. A cada 5 acertos consecutivos, o bônus aumenta. Erros e alvos perdidos quebram a sequência.</p></div></div><div class="rule-amounts"><div><span>Por acerto</span><strong id="hitReward">+R$ 0,30</strong></div><div><span>Por nível de combo</span><strong id="comboReward">+R$ 0,10</strong></div><div><span>Por alvo perdido</span><strong id="missPenalty" class="negative">−R$ 0,20</strong></div><div><span>Por tiro fora</span><strong id="errorPenalty" class="negative">−R$ 0,10</strong></div></div><p class="fine">Valores proporcionais à entrada selecionada, arredondados ao centavo. Apenas uma penalidade por tiro fora por alvo.</p><div class="rule-step"><b>03</b><div><h3>Confira seu desempenho</h3><p>Retorno = entrada + acertos e bônus − penalidades, com mínimo zero. O retorno máximo exige 30/30 acertos, sem erros. Encerrar antes conta os alvos restantes como perdidos.</p></div></div><p class="demo-note">Protótipo independente, sem vínculo com Aimlabs.</p></section>
+    <section id="audioView" data-view="audio" class="screen-card" hidden><span class="eyebrow">ENTRE NO RITMO</span><h2>Seu som. Seu foco.</h2><section class="audio-card" aria-label="Controles de áudio"><div><span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span><div><b>Música de fundo</b><small>Trilha eletrônica original</small></div><button id="music" aria-pressed="false">Tocar</button></div><label for="musicVolume">Volume da música <output id="volumeLabel" for="musicVolume">25%</output></label><input id="musicVolume" type="range" min="0" max="100" value="25"><button id="sound" class="quiet-button" aria-pressed="false">Efeitos sonoros: desligados</button><p id="audioStatus" role="status">A música começa quando você tocar em “Tocar”.</p></section></section>
   </main>
+  <nav class="bottom-nav" aria-label="Navegação principal"><button data-open="wallet"><span aria-hidden="true">▱</span><small>Saldo</small></button><button data-open="ranking"><span aria-hidden="true">♜</span><small>Ranking</small></button><button data-open="lobby" class="is-active"><span class="nav-play-icon" aria-hidden="true">⌖</span><small>Jogar</small></button><button data-open="rules"><span aria-hidden="true">ⓘ</span><small>Regras</small></button><button data-open="audio"><span aria-hidden="true">♫</span><small>Áudio</small></button></nav>
+  <div id="notice" class="notice" role="status" hidden></div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

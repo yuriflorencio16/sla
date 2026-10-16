@@ -10,3 +10,11 @@ export function ledgerLabel(label) {
   const settled = label.match(/^Round settled · (\d+)\/(\d+) hits$/);
   return settled ? `Resultado da partida · ${settled[1]}/${settled[2]} acertos` : label;
 }
+
+export function parseEntry(text) {
+  const value = text.trim();
+  if (!/^\d{1,3}([.,]\d{1,2})?$/.test(value)) return null;
+  const [whole, decimal = ''] = value.replace(',', '.').split('.');
+  const cents = Number(whole) * 100 + Number(decimal.padEnd(2, '0'));
+  return cents >= 100 && cents <= 10000 ? cents : null;
+}

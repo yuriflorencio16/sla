@@ -6,7 +6,7 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
-import {RULES,createGame,advance,shoot,result} from '../game.js';
+import {RULES,createGame,advance,shoot,result,maximumPayout} from '../game.js';
 test('seed generates repeatable, in-bounds targets',()=>{const a=createGame(123),b=createGame(123);assert.deepEqual(a.targets,b.targets);assert.equal(a.targets.length,30);assert.ok(a.targets.every(t=>t.x-t.r>0&&t.x+t.r<1000&&t.y-t.r>0&&t.y+t.r<600));});
 test('hit scoring and streak bonus increase every five hits',()=>{const g=createGame(1);for(let i=0;i<10;i++){const t=g.targets[i],event=shoot(g,t.at+100,i,t.x,t.y);assert.equal(event.credits,i<4?6:i<9?8:10);}assert.equal(g.reward,74);assert.equal(g.bestStreak,10);assert.equal(result(g).reaction,100);});
 test('expired targets penalize once and reset streak',()=>{const g=createGame(1),t=g.targets[0];shoot(g,100,0,t.x,t.y);advance(g,1950);assert.equal(g.misses,1);assert.equal(g.penalty,4);assert.equal(g.streak,0);advance(g,1950);assert.equal(g.penalty,4);assert.equal(g.hits,1);});
@@ -19,6 +19,7 @@ test('HTTP lifecycle: authoritative rewards, expiry, wallet, idempotency, local 
  await new Promise((resolve,reject)=>{child.stdout.once('data',resolve);child.once('error',reject);child.once('exit',code=>reject(Error('Server exited '+code)));});
  let cookie='';const request=async(path,body)=>{const res=await fetch('http://127.0.0.1:3097/api/'+path,{method:body?'POST':'GET',headers:{cookie,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(res.headers.has('set-cookie'))cookie=res.headers.get('set-cookie').split(';')[0];return {status:res.status,data:await res.json()};};
  let r=await request('state');assert.equal(r.data.balance,1000);
+ for(const entry of [null,0,99,10001,5.5,'500',[],{}])assert.equal((await request('start',{entry})).status,400);
  r=await request('start',{});assert.equal(r.data.balance,900);const game=r.data.game,id=game.id,first=game.targets[0];
  assert.equal((await request('start',{})).status,400);
  assert.equal((await request('shot',{id,target:29,x:0,y:0})).status,400);
@@ -26,12 +27,29 @@ test('HTTP lifecycle: authoritative rewards, expiry, wallet, idempotency, local 
  assert.equal((await request('shot',{id,target:0,x:first.x,y:first.y})).status,400);
  r=await request('finish',{id});assert.equal(r.data.game.status,'finished');assert.equal(r.data.game.misses,29);assert.equal(r.data.game.paid,0);assert.equal(r.data.balance,900);assert.equal(r.data.leaders[0].hits,1);
  r=await request('finish',{id});assert.equal(r.data.balance,900);assert.equal(r.data.ledger.filter(x=>x.label.startsWith('Round settled')).length,1);
- r=await request('refill',{});assert.equal(r.data.balance,1900);assert.equal((await request('refill',{})).status,400);
+ r=await request('refill',{});assert.equal(r.data.balance,10000);assert.equal((await request('refill',{})).status,400);
  r=await request('start',{});const second=r.data.game.id;const database=new DatabaseSync(dir+'/aim.sqlite');database.prepare('UPDATE rounds SET started=? WHERE id=?').run(Date.now()-31000,second);database.close();
- r=await request('state');assert.equal(r.data.game.status,'finished');assert.equal(r.data.game.misses,30);assert.equal(r.data.balance,1800);
+ r=await request('state');assert.equal(r.data.game.status,'finished');assert.equal(r.data.game.misses,30);assert.equal(r.data.balance,9900);
  r=await request('start',{});const winner=r.data.game.id,winning=createGame(321);for(const target of winning.targets)shoot(winning,target.at+100,target.id,target.x,target.y);
  const winningDb=new DatabaseSync(dir+'/aim.sqlite');winningDb.prepare('UPDATE rounds SET state=?,started=? WHERE id=?').run(JSON.stringify(winning),Date.now()-31000,winner);winningDb.close();
- r=await request('state');assert.equal(r.data.game.paid,440);assert.equal(r.data.balance,2140);r=await request('finish',{id:winner});assert.equal(r.data.balance,2140);
+ r=await request('state');assert.equal(r.data.game.paid,440);assert.equal(r.data.balance,10240);r=await request('finish',{id:winner});assert.equal(r.data.balance,10240);
+ r=await request('start',{entry:500});assert.equal(r.data.balance,9740);assert.equal(r.data.game.entry,500);const custom=r.data.game;
+ r=await request('shot',{id:custom.id,target:0,x:custom.targets[0].x,y:custom.targets[0].y,entry:10000});assert.equal(r.data.event.credits,30);assert.equal(r.data.game.entry,500);
+ r=await request('finish',{id:custom.id});assert.equal(r.data.game.paid,0);assert.equal(r.data.balance,9740);
  const other=await fetch('http://127.0.0.1:3097/api/state');assert.equal((await other.json()).balance,1000);
  for(const path of ['/','/app.js','/game.js','/style.css','/format.js','/music.js'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
+});
+
+test('variable stakes scale rewards, losses and the maximum-return preview',()=>{
+ for(const entry of [100,125,500,1000,10000]){
+  const g=createGame(1,entry);
+  for(const target of g.targets)shoot(g,target.at+100,target.id,target.x,target.y);
+  assert.equal(result(g).payout,maximumPayout(entry));
+  if(entry===500)assert.equal(result(g).payout,2200);
+  const loss=createGame(1,entry);advance(loss,RULES.duration);assert.equal(result(loss).net,-entry);assert.equal(result(loss).payout,0);
+ }
+});
+test('old rounds without a stored entry retain their original settlement',()=>{
+ const g=createGame(1);delete g.entry;
+ shoot(g,100,0,g.targets[0].x,g.targets[0].y);assert.equal(g.reward,6);assert.equal(result(g).payout,106);
 });
