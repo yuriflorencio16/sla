@@ -1,28 +1,30 @@
 // JavaScript / public/aim.js / browser and Node.js / crosshair settings and relative aim
-export const DEFAULT_AIM = Object.freeze({ shape: 'classic', color: '#00ff88', outlineColor: '#000000', size: 8, gap: 4, thickness: 2, outline: 1, opacity: 100, dot: false, dotSize: 2, dynamic: false, sensitivity: 1, dpi: 800, invertY: false, inputMode: 'captured' });
+import {APP_YAW, DEFAULT_FOV_Y, GAME_PROFILES} from './conversion.js';
+export const DEFAULT_AIM = Object.freeze({ shape: 'classic', color: '#00ff88', outlineColor: '#000000', size: 8, gap: 4, thickness: 2, outline: 1, opacity: 100, dot: false, dotSize: 2, dynamic: false, sensitivity: 1, dpi: 800, invertY: false, inputMode: 'captured', verticalRatio: 1, fovY: DEFAULT_FOV_Y, sourceGame: 'manual' });
 export function sanitizeAim(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) input = {};
   const clean = { ...DEFAULT_AIM };
-  const ranges = { size: [1, 24], gap: [-4, 20], thickness: [0.5, 6], outline: [0, 4], opacity: [20, 100], dotSize: [1, 6], sensitivity: [0.05, 5], dpi: [100, 16000] };
+  const ranges = { size: [1, 24], gap: [-4, 20], thickness: [0.5, 6], outline: [0, 4], opacity: [20, 100], dotSize: [1, 6], sensitivity: [0.0001, 1000], verticalRatio: [0.0000001, 10000000], fovY: [20, 150], dpi: [100, 16000] };
   for (const [key, [min, max]] of Object.entries(ranges)) if (typeof input[key] === 'number' && Number.isFinite(input[key])) clean[key] = Math.max(min, Math.min(max, input[key]));
   for (const key of ['color', 'outlineColor']) if (/^#[\da-f]{6}$/i.test(input[key] ?? '')) clean[key] = input[key];
   for (const key of ['dot', 'dynamic', 'invertY']) if (typeof input[key] === 'boolean') clean[key] = input[key];
   if (['classic', 'cross', 'dot', 'circle', 't'].includes(input.shape)) clean.shape = input.shape;
+  if (input.sourceGame === 'manual' || Object.hasOwn(GAME_PROFILES, input.sourceGame ?? '')) clean.sourceGame = input.sourceGame;
   if (['captured', 'free'].includes(input.inputMode)) clean.inputMode = input.inputMode;
   return clean;
 }
 export function loadAim(storage) { try { return sanitizeAim(JSON.parse(storage.getItem('aimrush-aim-v1'))); } catch { return { ...DEFAULT_AIM }; } }
 export function saveAim(storage, settings) { try { storage.setItem('aimrush-aim-v1', JSON.stringify(sanitizeAim(settings))); return true; } catch { return false; } }
-export const cmPer360 = settings => 360 * 2.54 / (0.022 * settings.sensitivity * settings.dpi);
+export const cmPer360 = settings => 360 * 2.54 / (APP_YAW * settings.sensitivity * settings.dpi);
 export function moveAim(position, dx, dy, settings, width = 1000, height = 600) {
-  // CS-style 0.022 degrees/count, with a 90-degree 4:3 reference field of view.
-  const focal = height * 2 / 3, radians = 0.022 * settings.sensitivity * Math.PI / 180;
+  // Angular gain preserves cm/360; the vertical FOV controls screen projection separately.
+  const focal = height / (2 * Math.tan((settings.fovY ?? DEFAULT_FOV_Y) * Math.PI / 360)), radians = APP_YAW * settings.sensitivity * Math.PI / 180;
   const project = (value, delta, dimension) => {
     const center = dimension / 2, limit = Math.atan(center / focal);
     const angle = Math.max(-limit, Math.min(limit, Math.atan((value - center) / focal) + delta * radians));
     return Math.max(0, Math.min(dimension, center + Math.tan(angle) * focal));
   };
-  return [project(position[0], dx, width), project(position[1], dy * (settings.invertY ? -1 : 1), height)];
+  return [project(position[0], dx, width), project(position[1], dy * (settings.verticalRatio ?? 1) * (settings.invertY ? -1 : 1), height)];
 }
 export function drawCrosshair(ctx, x, y, settings, scale = 1, recoil = 0) {
   const s = settings, dynamic = s.dynamic ? recoil * 8 : 0;

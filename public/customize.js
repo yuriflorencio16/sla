@@ -1,6 +1,7 @@
 // JavaScript / public/customize.js / browser / crosshair editor and free practice UI
 import { DEFAULT_AIM, sanitizeAim, loadAim, saveAim, cmPer360, drawCrosshair, AimInput } from '/aim.js';
 import { PracticeSession } from '/practice.js';
+import { GameConverter } from '/converter-ui.js';
 const $ = id => document.getElementById(id);
 export function drawRange(ctx, training = false) {
   const bg = ctx.createLinearGradient(0, 0, 0, 600);
@@ -42,7 +43,8 @@ export class AimStudio {
         const key = control.dataset.aim;
         let value = control.type === 'checkbox' ? control.checked : ['range', 'number'].includes(control.type) ? control.valueAsNumber : control.value;
         if (typeof value === 'number' && !Number.isFinite(value)) return;
-        this.settings = sanitizeAim({ ...this.settings, [key]: value }); this.sync(); this.persist();
+        if (key === 'sensitivity' && control.type === 'range') value = 10 ** value;
+        this.settings = sanitizeAim({ ...this.settings, [key]: value, ...(['sensitivity','dpi','verticalRatio','fovY'].includes(key) ? {sourceGame:'manual'} : {}) }); this.sync(); this.persist();
       };
       control.addEventListener('input', update);
       control.addEventListener('change', () => { update(); this.sync(); });
@@ -61,13 +63,17 @@ export class AimStudio {
       try { if (document.fullscreenElement) await document.exitFullscreen(); else await $('practiceCanvasWrap').requestFullscreen(); }
       catch { this.notify('Tela cheia indisponível neste navegador.'); }
     };
+    this.converter = new GameConverter({ settings: () => this.settings, storage: this.storage, notify: this.notify, apply: settings => { this.settings = sanitizeAim(settings); this.sync(); this.persist(); } });
     this.sync(); this.inputStatus(false);
   }
   sync() {
     document.querySelectorAll('[data-aim]').forEach(control => {
       const value = this.settings[control.dataset.aim];
-      if (control.type === 'checkbox') control.checked = value; else control.value = value;
+      if (control.type === 'checkbox') control.checked = value;
+      else if (control.dataset.aim === 'sensitivity' && control.type === 'range') { control.value = Math.log10(value); control.setAttribute('aria-valuetext', value.toLocaleString('pt-BR', {maximumFractionDigits:6})); }
+      else control.value = value;
     });
+    this.converter?.syncApplied();
     $('cm360').textContent = `Referência: ${cmPer360(this.settings).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} cm/360° a ${this.settings.dpi} DPI.`;
   }
   persist() {

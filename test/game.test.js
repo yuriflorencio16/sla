@@ -37,7 +37,7 @@ test('HTTP lifecycle: authoritative rewards, expiry, wallet, idempotency, local 
  r=await request('shot',{id:custom.id,target:0,x:custom.targets[0].x,y:custom.targets[0].y,entry:10000});assert.equal(r.data.event.credits,30);assert.equal(r.data.game.entry,500);
  r=await request('finish',{id:custom.id});assert.equal(r.data.game.paid,0);assert.equal(r.data.balance,9740);
  const other=await fetch('http://127.0.0.1:3097/api/state');assert.equal((await other.json()).balance,1000);
- for(const path of ['/','/app.js','/game.js','/style.css','/format.js','/music.js','/aim.js','/practice.js','/customize.js'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
+ for(const path of ['/','/app.js','/game.js','/style.css','/format.js','/music.js','/aim.js','/practice.js','/customize.js','/conversion.js','/converter-ui.js'])assert.equal((await fetch('http://127.0.0.1:3097'+path)).status,200);
 });
 
 test('variable stakes scale rewards, losses and the maximum-return preview',()=>{

@@ -48,7 +48,15 @@ Open **Mira** from the fixed navigation or the lobby. The CS-inspired editor pro
 
 Sensitivity is applied to relative mouse movement in **captured mode** through the Pointer Lock API, rather than scaling the operating-system cursor. Desktop round/training start requests capture from the user's click; the capture button or the next click on the arena can reacquire it. **Esc releases the cursor without pausing the timer**. Leaving a play screen or finishing releases capture. Raw/unadjusted movement is requested when supported; if capture fails, direct cursor control remains available.
 
-Movement uses a CS-style `0.022 degrees/count` reference and a 90-degree horizontal reference FOV at 4:3, projected onto the arena. Sensitivity is 0.05–5, with optional vertical inversion. The DPI field only calculates a theoretical cm/360° reference; it cannot configure hardware DPI. Browser/OS mouse counts may differ from CS, so this is not an exact game sensitivity converter. Cursor-free mode and touch use direct positions and do not apply the sensitivity multiplier.
+Movement uses a Source-style `0.022 degrees/count` reference, with configurable vertical FOV. Older saved settings retain the previous 90-degree horizontal reference at 4:3. The manual sensitivity range is 0.0001–1000 with a logarithmic quick slider, numeric fine adjustment and optional vertical inversion. Imported vertical sensitivity can differ via a vertical/horizontal ratio. In the converter, the source and destination DPI affect the imported angular gain; the manual DPI field reports the hardware DPI used for the theoretical cm/360° reference. The site cannot change hardware DPI; it cannot configure hardware DPI. Browser/OS mouse counts may differ from CS, so calculations reproduce the declared input model rather than guaranteeing exact cross-game feel. Cursor-free mode and touch use direct positions and do not apply the sensitivity multiplier.
+
+## Game sensitivity converter
+
+**Mira**, immediately beside **Treino**, now has separate **Jogo e sensibilidade** and **Aparência da mira** tabs. Choose a game, enter the source sensitivity/DPI and the DPI used in AimRush, review the cm/360° result and apply it. R6 has its own multiplier field. X/Y sensitivities can differ. The source FOV can be imported with its proper convention; this affects the actual screen projection separately from cm/360°.
+
+Profiles cover standard CS:GO/CS2, a community Valorant profile, Rainbow Six hipfire, classic CoD/Warzone mouse scale, Apex and Overwatch. Current Warzone, other versions, unknown games and ADS can use measured cm/360° without assuming an unsupported slider ratio. A preview does not change active settings until applied. The training page identifies the active game profile and distance.
+
+See [SENSITIVITY_RESEARCH.md](SENSITIVITY_RESEARCH.md) for formulas, fetched sources, coefficient evidence, disagreements, version scope and calibration limits. There is no claim of exact compatibility with every game's current release or every zoom setting.
 
 ## Free training
 
@@ -68,14 +76,14 @@ Background music and hit effects have independent controls. The original 104 BPM
 
 - `game.js`: seeded target positions, per-round stake, geometry, deadlines, proportional rewards, combos, maximum preview and settlement.
 - `server.js`: authoritative scoring, SQLite wallet transactions, idempotent settlement, anonymous HttpOnly SameSite cookies and local ranking.
-- `public/`: blue lobby, gameplay canvas, wallet, rules, ranking, audio, BRL formatting and entry parsing. `aim.js` handles settings, rendering and relative input; `practice.js` handles the free exercise engine; `customize.js` connects the editor and training UI.
+- `public/`: blue lobby, gameplay canvas, wallet, rules, ranking, audio, BRL formatting and entry parsing. `aim.js` handles settings, rendering and relative input; `practice.js` handles the free exercise engine; `customize.js` connects the editor and training UI. `conversion.js` implements profile/FOV mathematics, and `converter-ui.js` handles preview and application.
 - `test/`: engine, HTTP integration, legacy data compatibility and currency/input tests.
 
 The ranking shows the best finished hit count per anonymous browser account on this server, up to ten accounts. Clearing cookies creates a fresh account. This is a demo session, not account authentication or recovery.
 
 ## Validation
 
-`npm test` runs **18 tests**, including stake validation, proportional payouts, exact maximum-preview matching, old-round compatibility, BRL input/formatting and the HTTP wallet lifecycle. HTTP tests use temporary isolated SQLite databases and port 3097. The tests also cover saved aim settings, sensitivity, input bounds, inversion, training deadlines and tracking metrics. Browser checks cover real pointer capture and measured sensitivity changes, editor persistence and rendered presets, 30-second automatic training completion, no training wallet/ranking effects, round hits, mobile widths and touch. Earlier validation also covered entry selection, settlement, insufficient balance/refill and audio output.
+`npm test` runs **26 tests**, including stake validation, proportional payouts, exact maximum-preview matching, old-round compatibility, BRL input/formatting and the HTTP wallet lifecycle. HTTP tests use temporary isolated SQLite databases and port 3097. The tests also cover saved aim settings, sensitivity, input bounds, inversion, training deadlines and tracking metrics. Browser checks cover real pointer capture and measured sensitivity changes, editor persistence and rendered presets, 30-second automatic training completion, no training wallet/ranking effects, round hits, mobile widths and touch. Cross-game checks additionally verify different DPIs, the R6 multiplier and independent axes, measured Warzone, FOV-dependent captured movement, tabs and profile persistence. Earlier validation also covered entry selection, settlement, insufficient balance/refill and audio output.
 
 ## Production limitations
 
